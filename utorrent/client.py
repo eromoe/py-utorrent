@@ -117,11 +117,10 @@ class UTorrentClient(object):
 
     def addfile2(self, torrent_path, download_dir=None, sub_dir=None):
         params = [('action', 'add-file')]
-        sub_dir = None
         if sub_dir:
             params.append(('path', sub_dir))
         if download_dir:
-            download_dir
+            params.append(('download_dir', download_dir))
 
         form = MultiPartForm()
         filename = os.path.basename(torrent_path)
