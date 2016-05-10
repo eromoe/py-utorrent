@@ -4,9 +4,10 @@ import urllib2
 import urlparse
 import cookielib
 import re
+import os
 import StringIO
 try:
-    import json 
+    import json
 except ImportError:
     import simplejson as json
 
@@ -31,7 +32,7 @@ class UTorrentClient(object):
                                   user=username,
                                   passwd=password)
         opener = urllib2.build_opener(auth_handler)
-        urllib2.install_opener(opener)     
+        urllib2.install_opener(opener)
 
         cookie_jar = cookielib.CookieJar()
         cookie_handler = urllib2.HTTPCookieProcessor(cookie_jar)
@@ -47,7 +48,7 @@ class UTorrentClient(object):
         match = re.search(token_re, response.read())
         return match.group(1)
 
-       
+
     def list(self, **kwargs):
         params = [('list', '1')]
         params += kwargs.items()
@@ -58,33 +59,33 @@ class UTorrentClient(object):
         for hash in hashes:
             params.append(('hash', hash))
         return self._action(params)
-        
+
     def stop(self, *hashes):
         params = [('action', 'stop'),]
         for hash in hashes:
             params.append(('hash', hash))
         return self._action(params)
- 
+
     def pause(self, *hashes):
         params = [('action', 'pause'),]
         for hash in hashes:
             params.append(('hash', hash))
         return self._action(params)
- 
+
     def forcestart(self, *hashes):
         params = [('action', 'forcestart'),]
         for hash in hashes:
             params.append(('hash', hash))
         return self._action(params)
- 
+
     def getfiles(self, hash):
         params = [('action', 'getfiles'), ('hash', hash)]
         return self._action(params)
- 
+
     def getprops(self, hash):
         params = [('action', 'getprops'), ('hash', hash)]
         return self._action(params)
-        
+
     def setprops(self, hash, **kvpairs):
         params = [('action', 'setprops'), ('hash', hash)]
         for k, v in kvpairs.iteritems():
@@ -99,7 +100,7 @@ class UTorrentClient(object):
             params.append(('f', str(file_index)))
 
         return self._action(params)
-        
+
     def addfile(self, filename, filepath=None, bytes=None):
         params = [('action', 'add-file')]
 
@@ -108,26 +109,44 @@ class UTorrentClient(object):
             file_handler = open(filepath,'rb')
         else:
             file_handler = StringIO.StringIO(bytes)
-            
+
         form.add_file('torrent_file', filename.encode('utf-8'), file_handler)
 
         return self._action(params, str(form), form.get_content_type())
 
+
+    def addfile2(self, torrent_path, download_dir=None, sub_dir=None):
+        params = [('action', 'add-file')]
+        sub_dir = None
+        if sub_dir:
+            params.append(('path', sub_dir))
+        if download_dir:
+            download_dir
+
+        form = MultiPartForm()
+        filename = os.path.basename(torrent_path)
+        file_handler = open(torrent_path,'rb')
+
+        form.add_file('torrent_file', filename.encode('utf-8'), file_handler)
+
+        return self._action(params, str(form), form.get_content_type())
+
+
     def addurl(self, url):
         params = [('action', 'add-url'), ('s', url)]
         self._action(params)
-        
+
     def remove(self, *hashes):
         params = [('action', 'remove'),]
         for hash in hashes:
             params.append(('hash', hash))
-        return self._action(params)	
-		
+        return self._action(params)
+
     def removedata(self, *hashes):
         params = [('action', 'removedata'),]
         for hash in hashes:
             params.append(('hash', hash))
-        return self._action(params)	
+        return self._action(params)
 
     def _action(self, params, body=None, content_type=None):
         #about token, see https://github.com/bittorrent/webui/wiki/TokenSystem
@@ -144,5 +163,5 @@ class UTorrentClient(object):
             response = self.opener.open(request)
             return response.code, json.loads(response.read())
         except urllib2.HTTPError,e:
-            raise 
-        
+            raise
+
